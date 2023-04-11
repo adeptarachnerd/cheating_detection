@@ -2,6 +2,7 @@ from tkinter import *
 from PIL import Image, ImageTk
 from tkinter import ttk, messagebox
 import pymysql, os
+import re
 import credentials as cr
 
 class SignUp:
@@ -55,13 +56,27 @@ class SignUp:
         terms_and_con = Checkbutton(frame,text="I Agree The Terms & Conditions",variable=self.terms,onvalue=1,offvalue=0,bg="#DA7B93",font=("times new roman",12)).place(x=20,y=420)
         self.signup = Button(frame,text="Sign Up",command=self.signup_func,font=("times new roman",18, "bold"),bd=0,cursor="hand2",bg="#2E151B",fg="white").place(x=120,y=470,width=250)
 
+
     def signup_func(self):
-        if self.fname_txt.get()=="" or self.lname_txt.get()=="" or self.email_txt.get()=="" or self.questions.get()=="Select" or self.answer_txt.get()=="" or self.password_txt.get() == "":
-            messagebox.showerror("Error!","Sorry!, All fields are required",parent=self.window)
+    # Validate first name and last name
+        name_regex = r"^[A-Za-z]{1,20}$"
+        if not re.match(name_regex, self.fname_txt.get()):
+            messagebox.showerror("Error!", "Invalid first name. Only alphabets allowed (1-20 characters)", parent=self.window)
+            return
+        if not re.match(name_regex, self.lname_txt.get()):
+            messagebox.showerror("Error!", "Invalid last name. Only alphabets allowed (1-20 characters)", parent=self.window)
+            return
+   
+    # Validate email address
+        email_regex = r"^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+$"
+        if not re.match(email_regex, self.email_txt.get()):
+            messagebox.showerror("Error!", "Invalid email address", parent=self.window)
+            return
 
+        if self.questions.get() == "Select" or self.answer_txt.get() == "" or self.password_txt.get() == "":
+            messagebox.showerror("Error!", "Sorry!, All fields are required", parent=self.window)
         elif self.terms.get() == 0:
-            messagebox.showerror("Error!","Please Agree with our Terms & Conditions",parent=self.window)
-
+            messagebox.showerror("Error!", "Please Agree with our Terms & Conditions", parent=self.window)
         else:
             try:
                 connection = pymysql.connect(host=cr.host, user=cr.user, password=cr.password, database=cr.database)
@@ -69,9 +84,9 @@ class SignUp:
                 cur.execute("select * from student_register where email=%s",self.email_txt.get())
                 row=cur.fetchone()
 
-                # Check if th entered email id is already exists or not.
-                if row!=None:
-                    messagebox.showerror("Error!","The email id is already exists, please try again with another email id",parent=self.window)
+            # Check if the entered email id already exists or not.
+                if row != None:
+                    messagebox.showerror("Error!", "The email id is already exists, please try again with another email id", parent=self.window)
                 else:
                     cur.execute("insert into student_register (f_name,l_name,email,question,answer,password) values(%s,%s,%s,%s,%s,%s)",
                                     (
@@ -84,10 +99,11 @@ class SignUp:
                                     ))
                     connection.commit()
                     connection.close()
-                    messagebox.showinfo("Congratulations!","Register Successful",parent=self.window)
+                    messagebox.showinfo("Congratulations!", "Register Successful", parent=self.window)
                     self.reset_fields()
             except Exception as es:
-                messagebox.showerror("Error!",f"Error due to {es}",parent=self.window)
+                messagebox.showerror("Error!",f"Error due to {es}", parent=self.window)
+
 
     def reset_fields(self):
         self.fname_txt.delete(0, END)
@@ -101,7 +117,3 @@ if __name__ == "__main__":
     root = Tk()
     obj = SignUp(root)
     root.mainloop()
-
-
-
-
